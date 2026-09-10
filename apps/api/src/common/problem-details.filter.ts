@@ -2,6 +2,7 @@ import {
   Catch,
   HttpException,
   HttpStatus,
+  Logger,
   type ArgumentsHost,
   type ExceptionFilter,
 } from '@nestjs/common';
@@ -10,6 +11,8 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 /** §5.2 — errors are RFC 7807 problem+json, not ad-hoc shapes. */
 @Catch()
 export class ProblemDetailsFilter implements ExceptionFilter {
+  private readonly log = new Logger(ProblemDetailsFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const reply = ctx.getResponse<FastifyReply>();
@@ -19,6 +22,14 @@ export class ProblemDetailsFilter implements ExceptionFilter {
       exception instanceof HttpException
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
+
+    // An unexpected error must reach the log with its stack. Returning a bare
+    // "An unexpected error occurred" to the client and nothing to the operator
+    // makes a 500 undiagnosable.
+    if (!(exception instanceof HttpException)) {
+      const e = exception as Error;
+      this.log.error(`Unhandled ${e?.name ?? 'error'} on ${req.method} ${req.url}: ${e?.message}`, e?.stack);
+    }
 
     const payload = exception instanceof HttpException ? exception.getResponse() : null;
     const detail =

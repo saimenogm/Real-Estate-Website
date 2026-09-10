@@ -456,6 +456,24 @@ async function main() {
     });
   }
 
+  // ── Admin users ────────────────────────────────────────────────────────
+  // §5.9 — TOTP is mandatory in production; the seed accounts have no secret
+  // enrolled, and AuthService refuses a TOTP-less login when NODE_ENV is
+  // production. They exist so Phase 1 is usable locally, not to ship.
+  const { hash } = await import('@node-rs/argon2');
+  const seedPassword = process.env.SEED_ADMIN_PASSWORD ?? 'phase-one-local-only';
+  const passwordHash = await hash(seedPassword);
+  for (const [email, name, role] of [
+    ['owner@example.invalid', 'Seed owner', 'OWNER'],
+    ['sales@example.invalid', 'Seed sales agent', 'SALES'],
+  ] as const) {
+    await prisma.adminUser.upsert({
+      where: { email },
+      create: { email, name, role, passwordHash },
+      update: { name, role, passwordHash },
+    });
+  }
+
   const counts = await prisma.unit.groupBy({ by: ['status'], _count: true });
   console.log('› units by status:', Object.fromEntries(counts.map((c) => [c.status, c._count])));
   console.log(`› seeded ${development.name} (${DEV_SLUG})`);

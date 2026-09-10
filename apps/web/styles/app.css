@@ -219,3 +219,435 @@ code {
   background: var(--surface-sunk);
   padding: 0.1em 0.35em;
 }
+
+/* ═══ Phase 1 ═══════════════════════════════════════════════════════════
+   Every colour below is a token. §2.3 forbids a component computing a colour
+   from the time state, and a literal hex here is the same mistake by another
+   route. */
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--surface-raised);
+  color: var(--ink);
+  padding: var(--space-3) var(--space-5);
+  z-index: 100;
+}
+.skip-link:focus { left: var(--space-4); top: var(--space-4); }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Navigation ───────────────────────────────────────────────────────── */
+.nav {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: var(--space-5) var(--page-margin);
+  border-bottom: 1px solid var(--line);
+}
+
+.nav-brand {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--text-md);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.nav-links {
+  display: flex;
+  gap: var(--space-5);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex-wrap: wrap;
+}
+
+.nav-link {
+  color: var(--ink-muted);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  padding-bottom: 2px;
+  border-bottom: 1px solid transparent;
+  transition: color 120ms var(--time-ease), border-color 120ms var(--time-ease);
+}
+.nav-link:hover { color: var(--ink); }
+.nav-link[aria-current] { color: var(--ink); border-bottom-color: var(--accent); }
+
+.nav-mode { margin-left: auto; }
+
+/* ── Section rail, single-page mode only (§6.1) ───────────────────────── */
+.rail {
+  position: fixed;
+  left: var(--space-4);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  display: none;
+}
+@media (min-width: 1280px) { .rail { display: block; } }
+
+.rail ol { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.rail a {
+  display: block;
+  font-size: var(--text-2xs);
+  color: var(--ink-muted);
+  text-decoration: none;
+  padding: 2px 0 2px var(--space-3);
+  border-left: 1px solid var(--line);
+  transition: color 120ms var(--time-ease), border-color 120ms var(--time-ease);
+}
+.rail a:hover { color: var(--ink); }
+.rail a[aria-current] { color: var(--ink); border-left-color: var(--accent); }
+
+/* ── Buttons (§2.1 — no arrows appended to labels) ────────────────────── */
+.button {
+  display: inline-block;
+  appearance: none;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--surface);
+  font: inherit;
+  font-size: var(--text-sm);
+  padding: var(--space-3) var(--space-6);
+  cursor: pointer;
+  text-decoration: none;
+  border-radius: 2px;
+  transition: background-color 120ms var(--time-ease);
+}
+.button:hover { background: var(--ink); border-color: var(--ink); }
+.button:disabled { opacity: 0.6; cursor: default; }
+
+.button-quiet {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-muted);
+  font: inherit;
+  font-size: var(--text-xs);
+  padding: 2px 0;
+  cursor: pointer;
+  transition: color 120ms var(--time-ease), border-color 120ms var(--time-ease);
+}
+.button-quiet:hover { color: var(--ink); border-color: var(--accent); }
+
+/* ── Elevation stack (§2.5) ───────────────────────────────────────────── */
+.availability-layout {
+  display: grid;
+  gap: var(--space-7);
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+@media (min-width: 1100px) {
+  .availability-layout { grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); }
+}
+
+.elevation { width: 100%; height: auto; display: block; }
+
+.elevation-floor-label {
+  fill: var(--ink-muted);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.elevation-nonresidential {
+  fill: var(--surface-sunk);
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.elevation-unit { cursor: pointer; }
+.elevation-unit rect {
+  stroke: var(--accent);
+  stroke-width: 1;
+  transition: fill 120ms var(--time-ease), stroke 120ms var(--time-ease), opacity 200ms var(--time-ease);
+}
+
+/* §2.5 — status by fill treatment as well as hue, so it survives
+   colour-blindness and all four time states. */
+.elevation-unit[data-fill='solid'] rect { fill: var(--accent); }
+.elevation-unit[data-fill='hatch'] rect { fill: url(#hatch); }
+.elevation-unit[data-fill='outline'] rect { fill: none; stroke: var(--ink-muted); }
+.elevation-unit[data-fill='faint'] rect {
+  fill: var(--surface-sunk);
+  stroke: var(--line);
+  stroke-dasharray: 3 3;
+}
+
+/* §2.5 — non-matching units drop back rather than disappearing: seeing that the
+   building is mostly sold is itself persuasive. */
+.elevation-unit[data-dimmed] rect { opacity: 0.3; }
+.elevation-unit[data-dimmed] .elevation-unit-code { opacity: 0.3; }
+
+.elevation-unit[data-selected] rect { stroke: var(--ink); stroke-width: 2; }
+.elevation-unit:hover rect { stroke: var(--ink); }
+
+.elevation-unit-code {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  fill: var(--surface);
+  pointer-events: none;
+}
+.elevation-unit[data-fill='outline'] .elevation-unit-code,
+.elevation-unit[data-fill='faint'] .elevation-unit-code,
+.elevation-unit[data-fill='hatch'] .elevation-unit-code { fill: var(--ink); }
+
+.elevation-unit:focus-visible rect { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+  list-style: none;
+  margin: var(--space-5) 0 0;
+  padding: 0;
+  font-size: var(--text-xs);
+}
+.legend li { display: flex; align-items: center; gap: var(--space-2); }
+.legend-swatch { flex: none; }
+
+/* ── Filters ──────────────────────────────────────────────────────────── */
+.filters { display: grid; gap: var(--space-5); }
+.filter-group { border: 0; border-top: 1px solid var(--line); margin: 0; padding: var(--space-4) 0 0; }
+.filter-group legend { font-size: var(--text-xs); color: var(--ink-muted); padding: 0; }
+.filter-check { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); padding: 2px 0; }
+.filter-compass { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+.filter-chip { display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-xs); }
+.filter-price input[type='range'] { width: 100%; accent-color: var(--accent); }
+.filter-count { font-size: var(--text-sm); color: var(--ink-muted); margin: 0; }
+
+/* ── Unit panel ───────────────────────────────────────────────────────── */
+.unit-panel {
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  padding: var(--space-5);
+  margin-top: var(--space-5);
+}
+.unit-panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-4); }
+.unit-panel-title { font-family: var(--font-display); font-weight: 400; font-size: var(--text-lg); margin: 0; }
+.unit-panel-subhead { font-size: var(--text-sm); color: var(--ink-muted); margin: var(--space-5) 0 var(--space-3); }
+.unit-status { font-family: var(--font-ui); font-size: var(--text-xs); color: var(--ink-muted); margin-left: var(--space-3); }
+
+.unit-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin: var(--space-4) 0 0; }
+.unit-facts dt { font-size: var(--text-2xs); color: var(--ink-muted); margin: 0; }
+.unit-facts dd { margin: 0; font-size: var(--text-sm); }
+
+.unit-enquiry { margin-top: var(--space-6); border-top: 1px solid var(--line); padding-top: var(--space-5); }
+
+.schedule th[scope='row'] { font-weight: 400; }
+.align-right { text-align: right; }
+
+/* ── Typologies and amenities ─────────────────────────────────────────── */
+.typology-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-6); }
+@media (min-width: 800px) { .typology-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* §2.1 — not identical rounded cards with the same soft shadow. A rule and a
+   name, like an index. */
+.typology-card { border-top: 1px solid var(--line); padding-top: var(--space-4); }
+.typology-name { font-family: var(--font-display); font-weight: 400; font-size: var(--text-lg); margin: 0 0 var(--space-3); }
+.typology-name a { color: inherit; text-decoration: none; border-bottom: 1px solid var(--accent); }
+.typology-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin: 0; }
+.typology-facts dt { font-size: var(--text-2xs); color: var(--ink-muted); }
+.typology-facts dd { margin: 0; font-size: var(--text-sm); }
+
+.amenity-list { display: grid; gap: var(--space-7); }
+.amenity { max-width: 60ch; }
+.amenity[data-align='end'] { margin-left: auto; }
+.amenity-name { font-family: var(--font-display); font-weight: 400; font-size: var(--text-lg); margin: 0 0 var(--space-2); }
+
+.landmarks li { align-items: baseline; }
+.landmark-meta { display: flex; gap: var(--space-4); }
+
+.faq { margin: 0; }
+.faq-item { border-top: 1px solid var(--line); padding: var(--space-4) 0; }
+.faq-item dt { font-size: var(--text-md); margin-bottom: var(--space-2); }
+.faq-item dd { margin: 0; color: var(--ink-muted); max-width: 68ch; }
+
+.figure-wide { margin: var(--space-7) 0; }
+.figure-image { display: block; }
+
+/* ── Enquiry form ─────────────────────────────────────────────────────── */
+.enquiry-form { display: grid; gap: var(--space-4); max-width: 46ch; }
+.field { display: grid; gap: var(--space-2); }
+.field label { font-size: var(--text-xs); color: var(--ink-muted); }
+.field input, .field select, .field textarea {
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: var(--space-3);
+}
+.field input:focus-visible, .field select:focus-visible, .field textarea:focus-visible {
+  border-color: var(--accent);
+}
+.field-hint { font-size: var(--text-2xs); color: var(--ink-muted); margin: 0; }
+.field-error { font-size: var(--text-xs); color: var(--ink); border-left: 2px solid var(--accent); padding-left: var(--space-3); margin: 0; }
+
+/* §5.7 — the honeypot must be unreachable for people but present for bots, so
+   it is moved off-screen rather than display:none, which some bots skip. */
+.honeypot { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+.enquiry-units { font-size: var(--text-sm); display: flex; gap: var(--space-3); align-items: baseline; }
+.enquiry-sent { border-left: 2px solid var(--accent); padding-left: var(--space-5); }
+
+/* §2.5 — centre alignment is reserved for the hero line and the final CTA. */
+.section-cta { text-align: center; }
+.section-cta .enquiry-form { margin: 0 auto; text-align: left; }
+.section-cta .prose { margin-left: auto; margin-right: auto; }
+
+/* ═══ Phases 2–6 ════════════════════════════════════════════════════════ */
+
+/* ── Gallery (§9 Phase 2 task 9) ──────────────────────────────────────── */
+.gallery-filters { display: grid; gap: var(--space-4); margin-bottom: var(--space-6); }
+.gallery-filters .filter-group { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: baseline; }
+.gallery-filters .button-quiet[aria-pressed='true'] { color: var(--ink); border-color: var(--accent); }
+
+.gallery-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.gallery-item {
+  display: block;
+  width: 100%;
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: var(--surface-sunk);
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+}
+.gallery-item img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+.gallery-caption { display: block; font-size: var(--text-xs); padding: var(--space-2) 0; }
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  border: 0;
+  background: var(--scrim);
+  display: grid;
+  place-items: center;
+  gap: var(--space-4);
+  z-index: 50;
+}
+.lightbox img { max-width: 92vw; max-height: 82vh; object-fit: contain; }
+
+/* ── Parallax hero and frame sequences (§8.5) ─────────────────────────── */
+.frame-sequence { position: relative; }
+.frame-sequence-stage { position: sticky; top: 0; height: 100vh; display: grid; place-items: center; }
+.frame-sequence-canvas { width: 100%; height: 100%; object-fit: contain; }
+.frame-sequence-static img { width: 100%; height: auto; display: block; }
+
+.frame-sequence-loading {
+  position: absolute;
+  inset-inline: 25%;
+  inset-block-end: var(--space-8);
+  height: 2px;
+  background: var(--line);
+}
+.frame-sequence-bar { height: 100%; background: var(--accent); max-width: 100%; }
+
+/* ── Tour (§8.2, §8.3) ────────────────────────────────────────────────── */
+.tour-layout { display: grid; gap: var(--space-6); align-items: start; }
+@media (min-width: 1000px) { .tour-layout { grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); } }
+
+.tour-canvas { width: 100%; aspect-ratio: 16 / 9; background: var(--surface-sunk); }
+.tour-fallback { border-left: 2px solid var(--accent); padding-left: var(--space-5); }
+
+.tour-scenes ul { display: flex; flex-wrap: wrap; gap: var(--space-3); list-style: none; margin: var(--space-4) 0 0; padding: 0; }
+.tour-scenes button {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-muted);
+  font: inherit;
+  font-size: var(--text-xs);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  border-radius: 2px;
+  transition: color 120ms var(--time-ease), border-color 120ms var(--time-ease);
+}
+.tour-scenes button[aria-current] { color: var(--ink); border-color: var(--accent); }
+
+.minimap svg { width: 100%; height: auto; border: 1px solid var(--line); }
+.minimap-node circle { fill: var(--surface); stroke: var(--accent); stroke-width: 2; cursor: pointer; }
+.minimap-node[data-active] circle { fill: var(--accent); }
+.minimap-cone path { fill: var(--accent); opacity: 0.22; }
+
+.staging { margin-top: var(--space-5); }
+.staging-control { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); }
+
+/* ── Building selector and sun simulator (§8.4, §8.6) ─────────────────── */
+.building-selector { width: 100%; aspect-ratio: 4 / 3; position: relative; }
+.building-selector canvas { width: 100% !important; height: 100% !important; }
+
+.sun-simulator { border-top: 1px solid var(--line); padding-top: var(--space-6); margin-top: var(--space-6); }
+.sun-controls { display: grid; gap: var(--space-4); max-width: 44ch; }
+.sun-controls label { display: grid; gap: var(--space-2); font-size: var(--text-xs); color: var(--ink-muted); }
+.sun-controls input[type='range'] { accent-color: var(--accent); }
+.sun-controls output { font-size: var(--text-sm); color: var(--ink); }
+
+.sun-compass { width: 100%; max-width: 380px; height: auto; margin: var(--space-5) 0; }
+.sun-horizon { fill: none; stroke: var(--line); stroke-width: 1; }
+.sun-ground { stroke: var(--ink-muted); stroke-width: 1; }
+.sun-disc { fill: var(--accent); }
+.sun-cardinal { fill: var(--ink-muted); font-family: var(--font-ui); font-size: 11px; }
+
+.sun-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--space-4); margin: 0 0 var(--space-4); }
+.sun-facts dt { font-size: var(--text-2xs); color: var(--ink-muted); }
+.sun-facts dd { margin: 0; font-size: var(--text-sm); }
+
+/* ── Splat gate (§8.7) ────────────────────────────────────────────────── */
+.splat-gate { border: 1px solid var(--line); padding: var(--space-6); max-width: 52ch; }
+.splat-canvas { width: 100%; aspect-ratio: 16 / 9; background: var(--surface-sunk); }
+
+/* ── Concierge (§9 Phase 5) ───────────────────────────────────────────── */
+.concierge { border-top: 1px solid var(--line); padding-top: var(--space-7); margin-top: var(--space-7); }
+.concierge-form { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-3); }
+.concierge-form input {
+  flex: 1 1 28ch;
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: var(--space-3);
+}
+.concierge-examples { list-style: none; display: flex; flex-wrap: wrap; gap: var(--space-4); margin: 0 0 var(--space-5); padding: 0; }
+.concierge-result { margin-top: var(--space-5); }
+
+/* ── Progress timeline (§9 Phase 6) ───────────────────────────────────── */
+.timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-6); }
+.timeline-item { border-inline-start: 1px solid var(--line); padding-inline-start: var(--space-5); }
+.timeline-date { font-size: var(--text-xs); color: var(--ink-muted); margin: 0 0 var(--space-2); }
+.timeline-title { font-family: var(--font-display); font-weight: 400; font-size: var(--text-lg); margin: 0 0 var(--space-3); }
+.timeline-percent { display: flex; align-items: center; gap: var(--space-3); font-size: var(--text-xs); color: var(--ink-muted); margin: 0 0 var(--space-3); }
+.timeline-bar { display: block; block-size: 3px; background: var(--accent); max-inline-size: 220px; }

@@ -26,6 +26,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@node-rs/argon2": "^2.2.1",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "7.10.0",
     "@prisma/client-runtime-utils": "^7.10.0",

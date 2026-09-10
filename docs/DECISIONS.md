@@ -197,3 +197,120 @@ with a `pii:purge` queue already declared in the worker. Retention added later i
 retention never added. `Enquiry.verificationSkipped` exists for the §6.7 case
 where Turnstile is unreachable and a lead is kept for manual review rather than
 dropped. `AdminAuditLog` records exports, deletes and bulk status changes.
+
+---
+
+## D-18 — Vulnerable transitive dependencies are pinned by override
+
+**Status:** decided, 2026-09-09 · **§5.9**
+
+`pnpm audit --audit-level=high` failed the build with 15 high and 2 critical
+advisories, several in the request path (`@fastify/middie` middleware bypass,
+`@nestjs/platform-fastify` HEAD/encoding bypasses). Nest was moved to 11.2.3 and
+the rest are pinned through `pnpm.overrides`: `@fastify/middie`, `vitest`,
+`vite`, `deepmerge-ts`, `picomatch`, `path-to-regexp`, `glob`, `lodash`,
+`mysql2`. Audit now exits clean, so CI's gate is real rather than aspirational.
+Overrides are reviewed whenever a direct dependency majors.
+
+## D-19 — The admin is a plain React app, not Refine
+
+**Status:** decided, 2026-09-09 · **§3.1, §9 Phase 1 task 2**
+
+§3.1 lists Refine + Ant Design. The admin is three screens (dashboard, units,
+enquiries) over an API that already enforces every rule — transitions, roles,
+auditing — so Refine's data-provider and resource abstractions would be wrapping
+four fetch calls. It is built as plain React with a typed client instead: fewer
+dependencies, no design-system weight, and nothing to learn before changing it.
+
+**Revisit if** the admin grows full CRUD over typologies, milestones, amenities,
+landmarks, FAQs, tours and scenes as §5.4 describes. That is the point where
+Refine's scaffolding starts paying for itself.
+
+## D-20 — BullMQ queue names use hyphens
+
+**Status:** decided, 2026-09-09 · **§5.8**
+
+§5.8 names the queues `media:variants`, `video:encode` and so on. BullMQ 5
+refuses a colon — it is the separator in its own Redis key scheme — and throws
+at construction, so the worker crashed on boot. Wire names are hyphenated and
+each queue keeps a `specName` for cross-reference. `queues.test.ts` asserts both
+halves, because the failure mode was a crash at boot rather than a type error.
+
+## D-21 — The payment calculator, time state and concierge parser live in `@avida/types`
+
+**Status:** decided, 2026-09-09
+
+A widening of D-04. Anything that must give the same answer on the server and
+the client goes in the shared package with its tests: `computeSchedule`,
+`parseIntent`, `checkNarration`, the status-transition table, the filter
+predicate, and every formatter. The API and the web app import; neither
+reimplements. This is why 60 of the 96 tests live in one package.
+
+## D-22 — A depth map is never invented
+
+**Status:** decided, 2026-09-09 · **§7.4, §13**
+
+`media:depth` prefers a supplied Blender Z-depth pass, falls back to Depth
+Anything V2 when `DEPTH_MODEL_PATH` is configured, and otherwise reports
+`skipped`. It does not synthesise a plausible-looking depth map from luminance.
+A fabricated depth map produces a parallax that misrepresents the building's
+geometry, which §13 forbids; the hero simply renders flat, which §8.1 already
+specifies as the degradation path.
+
+`onnxruntime-node` is resolved at runtime and typed structurally, so the worker
+builds and boots without a ~200MB native dependency most deployments never need.
+
+## D-23 — The panorama reprojection is ours
+
+**Status:** decided, 2026-09-09 · **§7.5, §5.8**
+
+`media:tile` converts equirectangular to six cube faces and three tile levels
+with about twenty lines of arithmetic rather than shelling out to a panorama
+CLI. A build dependency on a binary that may not exist in the deploy image is a
+worse trade than owning the projection, which is stable and testable.
+
+## D-24 — The image crossfade animates the incoming layer
+
+**Status:** decided, 2026-09-09 · **§6.2** — supersedes the mechanism in D-14
+
+Same two-layer result, opposite direction: the outgoing image sits underneath at
+full opacity and the incoming one fades in above it. Animating the outgoing
+layer to zero needs a paint in between, which means `requestAnimationFrame` —
+and rAF does not run in a background tab, so the stale image would sit over the
+new one until its timer fired. Observed directly while verifying Phase 0.
+
+## D-25 — Splat rendering and the concierge model are optional at runtime
+
+**Status:** decided, 2026-09-09 · **§8.7, §9 Phase 5**
+
+`@sparkjsdev/spark` is not in the lockfile: there is no captured scene to render
+(§8.7 — splats only exist once something physical does), and a renderer for
+content that does not exist is weight for no benefit. `SparkViewer` resolves it
+at runtime and degrades to an explanatory message.
+
+The concierge behaves the same way with `ANTHROPIC_API_KEY` absent: the
+deterministic answer *is* the product, and narration is a wrapper over it. With
+no key configured the concierge still answers correctly.
+
+## D-26 — The concierge's guard is a rule, not a prompt
+
+**Status:** decided, 2026-09-09 · **§9 Phase 5**
+
+The model is told not to state numbers, and its output is then checked anyway:
+every digit in the prose must appear in the query result, or the prose is
+discarded and the deterministic sentence is shown instead. A prompt is a
+request; the guard is the rule. A rejected narration is logged as an error to
+us and is invisible to the visitor, who was always going to be shown the data.
+
+Numbers reach the screen only through the structured result and our own
+formatter — never from a sentence a model wrote.
+
+## D-27 — Enquiry export is limited to OWNER and MARKETING
+
+**Status:** decided, 2026-09-09 · **§5.9**
+
+The schema's roles are OWNER, MARKETING and SALES. §5.9 requires the CSV export
+to be audited but does not say who may run it. SALES reads the enquiry inbox in
+the app and works individual leads; walking out with every lead's contact
+details in one file is limited to the two roles accountable for the data. Both
+paths write an `AdminAuditLog` row with the actor, the filter and the row count.

@@ -100,8 +100,22 @@ These are enforced, not aspirational — see §16 of the plan.
 
 ## Current state
 
-Phase 0 is complete: the monorepo, local services, the full schema, an idempotent
-seed, a health-checked API, and a web app whose palette and imagery change across
-all four time states. Phase 1 — the marketing sections, the SVG elevation stack,
-the enquiry flow and the admin — is next, and §15 of the plan lists the questions
-that should be answered before it starts.
+Phases 0 through 6 are implemented. What that means concretely:
+
+| Phase | Built | Verified |
+|---|---|---|
+| 0 Foundation | monorepo, services, schema, seed, tokens, fonts | end to end, in a browser |
+| 1 Marketing + leads | public API, elevation stack, filters, unit panel, enquiry flow, admin, dual UI mode, SEO | API paths verified live; UI typechecked and unit-tested |
+| 2 Media pipeline | variants, thumbhash, depth, video, frames, gallery, parallax hero | code complete; needs real assets to exercise |
+| 3 Tour | panorama tiling, viewer with time-state swap, plan minimap | code complete; needs panoramas |
+| 4 Interactive 3D | frame-sequence player, building selector, sun simulator | code complete; needs renders and the architect's model |
+| 5 Immersive + AI | splat gate, virtual staging, concierge | concierge fully tested; splats need a capture |
+| 6 Ongoing | progress timeline | code complete |
+
+**The honest caveat**: Phases 2–5 are the code that *drives* renders, panoramas,
+frame sequences and a decimated glTF. None of those assets exist yet — see
+[`docs/CONTENT_BRIEF.md`](docs/CONTENT_BRIEF.md). Every one of those features
+degrades independently (§8.1), so the site works today without them.
+
+§15 of the plan lists eight questions that should be answered before real
+content lands; two of them change the schema.

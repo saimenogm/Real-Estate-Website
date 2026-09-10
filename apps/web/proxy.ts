@@ -5,8 +5,9 @@ import { resolveUiMode, UI_MODE_COOKIE, UI_MODE_PARAM } from '@avida/types';
  * Next 16 renamed the middleware file convention to `proxy` (DECISIONS D-09).
  *
  * §6.1 — mode resolution happens here and nowhere else: query param, then
- * cookie, then the env default. The request is rewritten into the matching
- * route group so the URL the visitor sees stays clean.
+ * cookie, then the env default. In single-page mode "/" is rewritten into the
+ * (single) route group, so the visitor's URL stays clean while both modes are
+ * served from the same tree.
  */
 export function proxy(request: NextRequest) {
   const param = request.nextUrl.searchParams.get(UI_MODE_PARAM);
@@ -17,8 +18,16 @@ export function proxy(request: NextRequest) {
     envDefault: process.env.NEXT_PUBLIC_UI_MODE_DEFAULT ?? null,
   });
 
-  const response = NextResponse.next();
-  // Sections and navigation read this without re-deriving the order above.
+  const headers = new Headers(request.headers);
+  // Layout and pages read the resolved mode from here rather than re-deriving it.
+  headers.set('x-ui-mode', mode);
+
+  const isHome = request.nextUrl.pathname === '/';
+  const response =
+    mode === 'single' && isHome
+      ? NextResponse.rewrite(new URL('/single', request.url), { request: { headers } })
+      : NextResponse.next({ request: { headers } });
+
   response.headers.set('x-ui-mode', mode);
 
   // An explicit ?ui= is a deliberate choice; remember it.

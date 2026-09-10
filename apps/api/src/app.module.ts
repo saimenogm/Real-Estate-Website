@@ -3,7 +3,14 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
+import { AdminModule } from './modules/admin/admin.module.js';
+import { ConciergeModule } from './modules/concierge/concierge.module.js';
 import { DevelopmentModule } from './modules/development/development.module.js';
+import { EnquiryModule } from './modules/enquiry/enquiry.module.js';
+import { LocationModule } from './modules/location/location.module.js';
+import { MediaModule } from './modules/media/media.module.js';
+import { TourModule } from './modules/tour/tour.module.js';
+import { TypologyModule } from './modules/typology/typology.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { InventoryModule } from './modules/inventory/inventory.module.js';
 import { PricingModule } from './modules/pricing/pricing.module.js';
@@ -40,6 +47,13 @@ import { PrismaModule } from './common/prisma.module.js';
     DevelopmentModule,
     InventoryModule,
     PricingModule,
+    TypologyModule,
+    LocationModule,
+    EnquiryModule,
+    AdminModule,
+    MediaModule,
+    TourModule,
+    ConciergeModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

@@ -20,7 +20,8 @@
     "infra:down": "docker compose -f infra/docker-compose.yml down",
     "infra:logs": "docker compose -f infra/docker-compose.yml logs -f",
     "check:env": "node scripts/check-env.mjs",
-    "check:secrets": "node scripts/check-public-secrets.mjs"
+    "check:secrets": "node scripts/check-public-secrets.mjs",
+    "verify:schedules": "node scripts/verify-schedules.mjs"
   },
   "devDependencies": {
     "turbo": "2.10.12",

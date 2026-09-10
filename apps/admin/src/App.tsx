@@ -1,26 +1,66 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { api, AdminApiError, type AdminUser } from './api';
+import { Login } from './pages/Login';
+import { Units } from './pages/Units';
+import { Enquiries } from './pages/Enquiries';
+import { Dashboard } from './pages/Dashboard';
 
-const API = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
+type Tab = 'dashboard' | 'units' | 'enquiries';
 
 /**
- * Phase 0 — the admin app builds, runs, and can reach the API. Refine, auth
- * with TOTP, the unit list and the enquiry inbox are Phase 1 (§9).
+ * §9 Phase 1 task 2 — the sales console: unit status, enquiry inbox, CSV
+ * export. Deliberately small (DECISIONS D-19): the whole app is three screens
+ * over an API that already enforces every rule.
  */
 export function App() {
-  const [health, setHealth] = useState<string>('checking…');
+  const [user, setUser] = useState<AdminUser | null>(null);
+  const [checking, setChecking] = useState(true);
+  const [tab, setTab] = useState<Tab>('dashboard');
 
   useEffect(() => {
-    fetch(`${API}/api/v1/health/deep`)
-      .then((r) => r.json())
-      .then((d) => setHealth(JSON.stringify(d, null, 2)))
-      .catch((e: Error) => setHealth(`unreachable: ${e.message}`));
+    api
+      .me()
+      .then(setUser)
+      .catch((e: unknown) => {
+        if (!(e instanceof AdminApiError && e.status === 401)) console.error(e);
+      })
+      .finally(() => setChecking(false));
   }, []);
 
+  const signOut = useCallback(() => {
+    void api.logout().finally(() => setUser(null));
+  }, []);
+
+  if (checking) return <main className="shell">Checking your session…</main>;
+  if (!user) return <Login onSignedIn={setUser} />;
+
   return (
-    <main style={{ fontFamily: 'system-ui, sans-serif', padding: 32, maxWidth: 720 }}>
-      <h1 style={{ fontWeight: 400 }}>Sales admin</h1>
-      <p>Phase 0 scaffold. Unit status, enquiries and media land in Phase 1.</p>
-      <pre style={{ background: '#f4f4f2', padding: 16, overflowX: 'auto' }}>{health}</pre>
-    </main>
+    <div className="shell">
+      <header className="bar">
+        <h1>Kivu Ridge — sales</h1>
+        <nav>
+          {(['dashboard', 'units', 'enquiries'] as Tab[]).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTab(t)}
+              aria-current={tab === t ? 'page' : undefined}
+            >
+              {t[0]!.toUpperCase() + t.slice(1)}
+            </button>
+          ))}
+        </nav>
+        <span className="who">
+          {user.name} ({user.role.toLowerCase()})
+          <button type="button" onClick={signOut}>
+            Sign out
+          </button>
+        </span>
+      </header>
+
+      {tab === 'dashboard' && <Dashboard />}
+      {tab === 'units' && <Units />}
+      {tab === 'enquiries' && <Enquiries role={user.role} />}
+    </div>
   );
 }

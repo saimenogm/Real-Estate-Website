@@ -4,8 +4,18 @@
  * file rather than drifting across fifty call sites.
  */
 
-/** §3.5 — one locale for v1. No i18n framework, no locale routing. */
-export const DEFAULT_LOCALE = 'en-GB';
+/**
+ * §3.5 — one locale for v1. No i18n framework, no locale routing.
+ *
+ * Read from configuration rather than hardcoded, because the development this
+ * ships for is not decided yet (§15 Q2) and the locale changes every price and
+ * date on the site. Next inlines NEXT_PUBLIC_* at build time, so this resolves
+ * on both the server and the client.
+ */
+declare const process: { env: Record<string, string | undefined> } | undefined;
+
+export const DEFAULT_LOCALE =
+  (typeof process !== 'undefined' ? process?.env.NEXT_PUBLIC_LOCALE : undefined) || 'en-GB';
 
 export interface Money {
   /** §4.2 — integer minor units (cents). Never a float. */

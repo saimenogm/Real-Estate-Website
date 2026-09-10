@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { MediaSetDto } from '../lib/api';
-import { mediaSrc, resolveAsset } from '../lib/media';
+import { hasVariants, mediaSrc, resolveAsset, srcSetFor } from '../lib/media';
 import { useTimeState } from '../lib/time-state/TimeStateProvider';
 
 /** §2.3 — images crossfade over 1200ms. */
@@ -17,20 +17,20 @@ const CROSSFADE_MS = 1200;
  * opacity toggle. A toggle needs a paint between "mounted opaque" and "animate
  * to zero", which means requestAnimationFrame — and rAF does not run in a
  * background tab, so the outgoing layer would sit opaque over the new image
- * until its timer fired. With the animation on the incoming layer, the steady
- * state is already correct: if the animation is throttled or unsupported the
- * change is simply instant, which is also what reduced motion asks for.
+ * until its timer fired (DECISIONS D-14).
  *
- * Phase 2 replaces the <img> with the AVIF/WebP `<picture>` ladder and the
- * thumbhash placeholder.
+ * Phase 2: when the pipeline has produced variants, this renders the full
+ * AVIF/WebP ladder; the seed placeholders still render as a plain <img>.
  */
 export function TimedImage({
   set,
   priority = false,
+  sizes = '100vw',
   className,
 }: {
   set: MediaSetDto;
   priority?: boolean;
+  sizes?: string;
   className?: string;
 }) {
   const { state, reducedMotion } = useTimeState();
@@ -63,23 +63,51 @@ export function TimedImage({
     return <div className={className} data-media-missing={set.key} aria-hidden="true" />;
   }
 
+  const avif = srcSetFor(asset, 'avif');
+  const webp = srcSetFor(asset, 'webp');
+  const alt = asset.altText ?? set.label;
+
   return (
-    <div className={className} data-media-set={set.key}>
+    <div
+      className={className}
+      data-media-set={set.key}
+      // §6.6 — the dominant colour holds the space before any pixel arrives, so
+      // the layout never shifts.
+      style={asset.dominantHex ? { backgroundColor: asset.dominantHex } : undefined}
+    >
       {outgoing && (
         <img src={outgoing} alt="" aria-hidden="true" className="timed-image timed-image-under" />
       )}
-      <img
-        key={src}
-        src={src}
-        alt={asset.altText ?? set.label}
-        width={asset.width}
-        height={asset.height}
-        loading={priority ? 'eager' : 'lazy'}
-        fetchPriority={priority ? 'high' : 'auto'}
-        decoding="async"
-        className="timed-image timed-image-over"
-        data-crossfade={outgoing ? 'in' : undefined}
-      />
+      {hasVariants(asset) ? (
+        <picture key={src}>
+          {avif && <source type="image/avif" srcSet={avif} sizes={sizes} />}
+          {webp && <source type="image/webp" srcSet={webp} sizes={sizes} />}
+          <img
+            src={src}
+            alt={alt}
+            width={asset.width || undefined}
+            height={asset.height || undefined}
+            loading={priority ? 'eager' : 'lazy'}
+            fetchPriority={priority ? 'high' : 'auto'}
+            decoding="async"
+            className="timed-image timed-image-over"
+            data-crossfade={outgoing ? 'in' : undefined}
+          />
+        </picture>
+      ) : (
+        <img
+          key={src}
+          src={src}
+          alt={alt}
+          width={asset.width || undefined}
+          height={asset.height || undefined}
+          loading={priority ? 'eager' : 'lazy'}
+          fetchPriority={priority ? 'high' : 'auto'}
+          decoding="async"
+          className="timed-image timed-image-over"
+          data-crossfade={outgoing ? 'in' : undefined}
+        />
+      )}
     </div>
   );
 }
