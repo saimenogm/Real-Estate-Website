@@ -1,0 +1,142 @@
+/**
+ * §2.3 — colour tokens. All four states are authored by hand; none is generated
+ * from a base. `data-time` on <html> is the only switch: no component computes a
+ * colour from the time state.
+ *
+ * Contrast is asserted by tests/tokens.contrast.test.ts (risk R5). If you change
+ * a value here and that test fails, the value is wrong — do not override it in a
+ * component, which would break the cascade rule above.
+ */
+/* ---- DAY (default) ---- */
+[data-time="day"] {
+  --surface:        #E4E3DD;  /* raw concrete, cool — deliberately not cream */
+  --surface-raised: #EFEEE9;
+  --surface-sunk:   #D6D5CE;
+  --ink:            #232B24;  /* dark green-black, board-formed concrete in shade */
+  --ink-muted:      #5E665C;
+  --line:           #C2C1B8;
+  --accent:         #8C6A45;  /* anodised bronze — matte, not gold */
+  --accent-weak:    #B79C7E;
+  --foliage:        #3F5B43;
+  --scrim:          rgba(35, 43, 36, 0.32);
+  --elev:           0 2px 24px rgba(35, 43, 36, 0.10);
+}
+
+/* ---- DAWN ---- */
+[data-time="dawn"] {
+  --surface:        #DCD8D2;
+  --surface-raised: #E7E2DA;
+  --surface-sunk:   #CBC6BF;
+  --ink:            #2B2A2C;
+  --ink-muted:      #5F5C5B;  /* R5: was #63605F — 4.39:1 on surface, below the §6.5 floor */
+  --line:           #BFB9B1;
+  --accent:         #8E6842;  /* R5: was #A0764C — 2.85:1 on surface, below 3:1 for UI parts */
+  --accent-weak:    #C0A183;
+  --foliage:        #4A5C4B;
+  --scrim:          rgba(43, 42, 44, 0.30);
+  --elev:           0 2px 24px rgba(43, 42, 44, 0.10);
+}
+
+/* ---- DUSK ---- */
+[data-time="dusk"] {
+  --surface:        #2E3038;
+  --surface-raised: #383B44;
+  --surface-sunk:   #23252B;
+  --ink:            #E9E5DC;
+  --ink-muted:      #A5A2A0;
+  --line:           #4A4D57;
+  --accent:         #C98F4E;  /* low sun on bronze */
+  --accent-weak:    #8A6740;
+  --foliage:        #46584A;
+  --scrim:          rgba(20, 21, 26, 0.48);
+  --elev:           0 2px 32px rgba(10, 11, 14, 0.42);
+}
+
+/* ---- NIGHT ---- */
+[data-time="night"] {
+  --surface:        #171B26;  /* deep indigo, never neutral black */
+  --surface-raised: #1F2432;
+  --surface-sunk:   #10131C;
+  --ink:            #DFDCD4;
+  --ink-muted:      #8E8F96;
+  --line:           #2C3242;
+  --accent:         #D9A566;  /* warm interior light spilling out */
+  --accent-weak:    #8F6E45;
+  --foliage:        #2F4438;
+  --scrim:          rgba(8, 10, 16, 0.56);
+  --elev:           0 2px 40px rgba(0, 0, 0, 0.55);
+}
+
+/* §2.4 — major third, 1.250, 17px base. */
+:root {
+  --text-2xs:  0.640rem;
+  --text-xs:   0.800rem;
+  --text-sm:   0.900rem;
+  --text-base: 1.000rem;
+  --text-md:   1.250rem;
+  --text-lg:   1.563rem;
+  --text-xl:   1.953rem;
+  --text-2xl:  2.441rem;
+  --text-3xl:  3.052rem;
+  --text-4xl:  4.768rem;
+  --text-5xl:  7.451rem;
+
+  --font-display: 'Gambetta', 'Iowan Old Style', Georgia, serif;
+  --font-ui: 'Supreme', ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* §2.5 — grid and spacing. */
+  --page-max: 1440px;
+  --page-margin: clamp(20px, 5vw, 96px);
+  --gutter: 24px;
+  --space-1: 4px;   --space-2: 8px;   --space-3: 12px;  --space-4: 16px;
+  --space-5: 24px;  --space-6: 32px;  --space-7: 48px;  --space-8: 64px;
+  --space-9: 96px;  --space-10: 128px; --space-11: 192px;
+
+  /* §2.3 — colour transitions 900ms, image crossfade 1200ms. Never transform. */
+  --time-colour-ms: 900ms;
+  --time-image-ms: 1200ms;
+  --time-ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html {
+  font-size: 17px;
+  /* §2.3 — only colour animates on a time change. Listing the properties
+     explicitly rather than using `all` keeps layout properties out. */
+  transition:
+    background-color var(--time-colour-ms) var(--time-ease),
+    color var(--time-colour-ms) var(--time-ease);
+}
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  transition:
+    background-color var(--time-colour-ms) var(--time-ease),
+    color var(--time-colour-ms) var(--time-ease);
+}
+
+/* §2.4 — every number on the site aligns in a column. */
+.tabular, [data-numeric] { font-variant-numeric: tabular-nums; }
+
+/* §6.5 — a visible focus ring, always. Never outline:none without a replacement. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* §2.6 — reduced motion snaps the time change and kills every transition
+   above 100ms. This block is deliberately last so it wins. */
+@media (prefers-reduced-motion: reduce) {
+  html, body { transition: none; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

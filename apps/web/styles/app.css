@@ -1,0 +1,221 @@
+/**
+ * Phase 0 layout only. Every colour here is a token from tokens.css — §2.3
+ * forbids a component computing a colour from the time state, and a literal
+ * hex in this file would be the same mistake by another route.
+ */
+
+.page {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 0 var(--page-margin) var(--space-11);
+}
+
+/* ── Hero ─────────────────────────────────────────────────────────────── */
+.hero {
+  padding: var(--space-9) 0 var(--space-8);
+  border-bottom: 1px solid var(--line);
+}
+
+.hero-image {
+  display: block;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--surface-sunk);
+}
+
+.timed-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* §2.3 — the crossfade. Opacity only; never transform, never layout.
+   The outgoing image sits underneath at full opacity and the incoming one
+   fades in over it, so a throttled or disabled animation degrades to an
+   instant change rather than leaving a stale image on top. */
+.hero-image { position: relative; }
+
+.timed-image-under {
+  position: absolute;
+  inset: 0;
+}
+
+.timed-image-over {
+  position: relative;
+  z-index: 1;
+}
+
+.timed-image-over[data-crossfade='in'] {
+  animation: timed-image-in var(--time-image-ms) var(--time-ease);
+}
+
+@keyframes timed-image-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* §2.6 — the time change snaps. No fade, no lingering layer. */
+  .timed-image-under { display: none; }
+  .timed-image-over[data-crossfade='in'] { animation: none; }
+}
+
+.hero-copy { padding-top: var(--space-6); }
+
+/* ── Type ─────────────────────────────────────────────────────────────── */
+.display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(var(--text-3xl), 9vw, var(--text-5xl));
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+/* §2.4 — the italic is for the development's name and pull quotes only. */
+.display-italic { font-style: italic; }
+
+.head {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--text-xl);
+  line-height: 1.15;
+  margin: 0 0 var(--space-5);
+}
+
+.lead {
+  font-size: var(--text-md);
+  max-width: 46ch;
+  margin: var(--space-4) 0 0;
+}
+
+.prose, .note, .meta {
+  max-width: 68ch;
+  margin: 0 0 var(--space-5);
+}
+
+.meta { color: var(--ink-muted); font-size: var(--text-sm); }
+.note { color: var(--ink-muted); font-size: var(--text-xs); }
+.muted { color: var(--ink-muted); }
+
+.disclaimer {
+  color: var(--ink-muted);
+  font-size: var(--text-2xs);
+  margin: var(--space-3) 0 0;
+}
+
+.fault {
+  border-left: 2px solid var(--accent);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-sunk);
+  overflow-x: auto;
+  font-size: var(--text-xs);
+}
+
+.section {
+  padding: var(--space-8) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+/* ── Data ─────────────────────────────────────────────────────────────── */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.table th, .table td {
+  text-align: left;
+  padding: var(--space-3) var(--space-4) var(--space-3) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.table th {
+  font-weight: 500;
+  color: var(--ink-muted);
+  font-size: var(--text-xs);
+}
+
+.statuses, .landmarks, .milestones {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+  max-width: 60ch;
+}
+
+.milestones { counter-reset: none; }
+
+.statuses li, .landmarks li, .milestones li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.status-label { color: var(--ink-muted); }
+
+/* ── Time scrubber (§6.2) ─────────────────────────────────────────────── */
+.scrubber {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin: var(--space-5) 0;
+}
+
+.scrubber-track {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.scrubber-stop {
+  appearance: none;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  padding: var(--space-3) var(--space-5);
+  cursor: pointer;
+  /* §2.6 — hover is a 120ms fill change. No lift, no shadow, no scale. */
+  transition: background-color 120ms var(--time-ease), color 120ms var(--time-ease);
+}
+
+.scrubber-stop:last-child { border-right: 0; }
+.scrubber-stop:hover { background: var(--surface-sunk); color: var(--ink); }
+
+.scrubber-stop[data-active='true'] {
+  background: var(--accent);
+  color: var(--surface);
+}
+
+.scrubber-cycle {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-sm);
+  padding: var(--space-3) var(--space-5);
+  cursor: pointer;
+  transition: background-color 120ms var(--time-ease);
+}
+
+.scrubber-cycle:hover { background: var(--surface-sunk); }
+
+.footer { padding-top: var(--space-8); }
+
+code {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.9em;
+  background: var(--surface-sunk);
+  padding: 0.1em 0.35em;
+}

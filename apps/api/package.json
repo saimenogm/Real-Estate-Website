@@ -1,0 +1,41 @@
+{
+  "name": "@avida/api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "nest start --watch",
+    "build": "nest build",
+    "start": "node dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "lint": "eslint src --max-warnings 0"
+  },
+  "dependencies": {
+    "@avida/db": "workspace:*",
+    "@avida/types": "workspace:*",
+    "@fastify/helmet": "13.1.1",
+    "@nestjs/common": "11.2.3",
+    "@nestjs/config": "4.0.2",
+    "@nestjs/core": "11.2.3",
+    "@nestjs/platform-fastify": "11.2.3",
+    "@nestjs/throttler": "6.4.0",
+    "class-transformer": "0.5.1",
+    "class-validator": "0.14.2",
+    "fastify": "^5.4.0",
+    "ioredis": "5.7.0",
+    "nestjs-pino": "4.4.0",
+    "pino": "9.9.0",
+    "pino-http": "10.5.0",
+    "pino-pretty": "13.1.1",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2"
+  },
+  "devDependencies": {
+    "@avida/config": "workspace:*",
+    "@nestjs/cli": "11.0.10",
+    "@nestjs/schematics": "11.0.8",
+    "@types/node": "24.3.0",
+    "typescript": "5.9.3",
+    "vitest": "3.2.4"
+  }
+}
