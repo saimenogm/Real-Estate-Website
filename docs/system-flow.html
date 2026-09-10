@@ -1,0 +1,225 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Kivu Ridge — system flow</title>
+<!--
+  Source for docs/system-flow.png. Open this file in a browser to edit; to
+  re-export, serve the directory over http (a file:// page cannot POST) and run
+  the snippet in docs/README-diagram.md. Colours are the §2.3 day tokens, so the
+  diagram reads as part of the same system it describes.
+-->
+<style>
+  /* §2.3 day tokens, so the diagram reads as part of the same system. */
+  :root{
+    --surface:#E4E3DD; --surface-raised:#EFEEE9; --surface-sunk:#D6D5CE;
+    --ink:#232B24; --ink-muted:#5E665C; --line:#C2C1B8; --accent:#8C6A45;
+    --foliage:#3F5B43;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--surface);color:var(--ink);font-family:ui-sans-serif,system-ui,sans-serif;padding:88px 60px 40px}
+  h1{font-family:Iowan Old Style,Georgia,serif;font-weight:400;font-size:34px;margin:0 0 4px;letter-spacing:-.01em}
+  .sub{color:var(--ink-muted);font-size:14px;margin:0 0 26px}
+  svg{width:1500px;height:1078px;display:block;overflow:visible}
+  text{font-family:ui-sans-serif,system-ui,sans-serif}
+  .lane{fill:var(--surface-raised);stroke:var(--line)}
+  .lane-label{fill:var(--ink-muted);font-size:12px;letter-spacing:.02em}
+  .node{fill:var(--surface);stroke:var(--ink);stroke-width:1.25}
+  .node-store{fill:var(--surface-sunk);stroke:var(--ink-muted);stroke-width:1.25}
+  .node-ext{fill:none;stroke:var(--ink-muted);stroke-width:1.25;stroke-dasharray:4 3}
+  .title{fill:var(--ink);font-size:14px;font-weight:600}
+  .meta{fill:var(--ink-muted);font-size:11.5px}
+  .num{font-variant-numeric:tabular-nums}
+  .flow{fill:none;stroke:var(--ink-muted);stroke-width:1.4;marker-end:url(#a)}
+  .flow-key{fill:none;stroke:var(--accent);stroke-width:2.2;marker-end:url(#aa)}
+  .flow-async{fill:none;stroke:var(--foliage);stroke-width:1.6;stroke-dasharray:5 4;marker-end:url(#af)}
+  .edge{fill:var(--ink-muted);font-size:11px}
+  .edge-key{fill:var(--accent);font-size:11.5px;font-weight:600}
+  .edge-async{fill:var(--foliage);font-size:11px}
+  .legend{fill:var(--ink-muted);font-size:12px}
+</style>
+<svg id="d" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 990">
+  <text x="0" y="-46" style="font-family:Iowan Old Style,Georgia,serif;font-size:34px;fill:#232B24">Kivu Ridge — how a request moves through the system</text>
+  <text x="0" y="-18" style="font-family:ui-sans-serif,system-ui,sans-serif;font-size:14px;fill:#5E665C">Bronze is the 60-second availability guarantee (§9). Green dashed is asynchronous — it never blocks a response.</text>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5E665C"/></marker>
+    <marker id="aa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8C6A45"/></marker>
+    <marker id="af" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#3F5B43"/></marker>
+  </defs>
+
+  <!-- lanes -->
+  <rect class="lane" x="0"    y="34"  width="1500" height="188" rx="2"/>
+  <rect class="lane" x="0"    y="246" width="1500" height="250" rx="2"/>
+  <rect class="lane" x="0"    y="520" width="1500" height="212" rx="2"/>
+  <rect class="lane" x="0"    y="756" width="1500" height="196" rx="2"/>
+  <text class="lane-label" x="12" y="52">PEOPLE</text>
+  <text class="lane-label" x="12" y="264">EDGE AND APPLICATION</text>
+  <text class="lane-label" x="12" y="538">SERVICES</text>
+  <text class="lane-label" x="12" y="774">STATE</text>
+
+  <!-- people -->
+  <g>
+    <rect class="node" x="120" y="82" width="230" height="104" rx="2"/>
+    <text class="title" x="140" y="112">Buyer</text>
+    <text class="meta" x="140" y="134">Anonymous. No account,</text>
+    <text class="meta" x="140" y="151">ever (§3.1).</text>
+    <text class="meta" x="140" y="172">Wants: what, trust, cost.</text>
+  </g>
+  <g>
+    <rect class="node" x="1010" y="82" width="230" height="104" rx="2"/>
+    <text class="title" x="1030" y="112">Sales agent</text>
+    <text class="meta" x="1030" y="134">Password + TOTP,</text>
+    <text class="meta" x="1030" y="151">12h session (§5.9).</text>
+    <text class="meta" x="1030" y="172">Flips status daily.</text>
+  </g>
+
+  <!-- application -->
+  <g>
+    <rect class="node" x="90" y="290" width="290" height="168" rx="2"/>
+    <text class="title" x="110" y="320">apps/web — Next.js 16</text>
+    <text class="meta" x="110" y="344">proxy.ts resolves UI mode:</text>
+    <text class="meta" x="110" y="361">?ui= → cookie → env (§6.1)</text>
+    <text class="meta" x="110" y="384">Rewrites "/" into (single)</text>
+    <text class="meta" x="110" y="401">or serves (multi) routes.</text>
+    <text class="meta" x="110" y="424">ISR 1h · tokens set data-time</text>
+    <text class="meta" x="110" y="441">on &lt;html&gt; (§2.3)</text>
+  </g>
+  <g>
+    <rect class="node" x="470" y="290" width="300" height="168" rx="2"/>
+    <text class="title" x="490" y="320">apps/api — NestJS 11</text>
+    <text class="meta" x="490" y="344">/development · /inventory</text>
+    <text class="meta" x="490" y="361">/typology · /unit · /pricing</text>
+    <text class="meta" x="490" y="378">/enquiry · /concierge · /admin</text>
+    <text class="meta" x="490" y="401">Transitions, roles and audit</text>
+    <text class="meta" x="490" y="418">enforced here — never in UI</text>
+    <text class="meta" x="490" y="435">(§5.5, §5.9).</text>
+  </g>
+  <g>
+    <rect class="node" x="1010" y="290" width="230" height="168" rx="2"/>
+    <text class="title" x="1030" y="320">apps/admin</text>
+    <text class="meta" x="1030" y="344">Dashboard, units,</text>
+    <text class="meta" x="1030" y="361">enquiry inbox.</text>
+    <text class="meta" x="1030" y="384">Bulk status is the</text>
+    <text class="meta" x="1030" y="401">daily action (§5.4).</text>
+    <text class="meta" x="1030" y="424">CSV export audited.</text>
+  </g>
+
+  <!-- services -->
+  <g>
+    <rect class="node" x="470" y="562" width="300" height="146" rx="2"/>
+    <text class="title" x="490" y="592">apps/worker — BullMQ</text>
+    <text class="meta" x="490" y="616">variants · depth · tile · frames</text>
+    <text class="meta" x="490" y="633">video · notify · geo · pii-purge</text>
+    <text class="meta" x="490" y="656">Idempotent: keys derive from</text>
+    <text class="meta" x="490" y="673">the input, so a rerun is a</text>
+    <text class="meta" x="490" y="690">no-op (§5.8).</text>
+  </g>
+  <g>
+    <rect class="node-ext" x="90" y="562" width="290" height="146" rx="2"/>
+    <text class="title" x="110" y="592">Claude — narration only</text>
+    <text class="meta" x="110" y="616">Receives the query result,</text>
+    <text class="meta" x="110" y="633">writes two sentences.</text>
+    <text class="meta" x="110" y="656">Every digit checked against</text>
+    <text class="meta" x="110" y="673">the rows; prose discarded if</text>
+    <text class="meta" x="110" y="690">it invents one (§9 Ph.5).</text>
+  </g>
+  <g>
+    <rect class="node-ext" x="1010" y="562" width="230" height="146" rx="2"/>
+    <text class="title" x="1030" y="592">Outside services</text>
+    <text class="meta" x="1030" y="616">Turnstile · Resend</text>
+    <text class="meta" x="1030" y="633">WhatsApp deep link</text>
+    <text class="meta" x="1030" y="656">Each one failing is</text>
+    <text class="meta" x="1030" y="673">survivable — the lead</text>
+    <text class="meta" x="1030" y="690">is kept (§6.7).</text>
+  </g>
+
+  <!-- state -->
+  <g>
+    <rect class="node-store" x="90" y="800" width="290" height="118" rx="2"/>
+    <text class="title" x="110" y="830">Postgres 16 + PostGIS</text>
+    <text class="meta" x="110" y="854">Units, enquiries, media sets,</text>
+    <text class="meta" x="110" y="871">tours, audit log.</text>
+    <text class="meta" x="110" y="894">Counts and price ranges are</text>
+    <text class="meta" x="110" y="911">computed, never stored (§4.4).</text>
+  </g>
+  <g>
+    <rect class="node-store" x="470" y="800" width="300" height="118" rx="2"/>
+    <text class="title" x="490" y="830">Redis</text>
+    <text class="meta" x="490" y="854">Job queues, and the elevation</text>
+    <text class="meta" x="490" y="871">stack cached 30s (§4.5).</text>
+    <text class="meta" x="490" y="894">An accelerator, not a</text>
+    <text class="meta" x="490" y="911">dependency — down means</text>
+    <text class="meta" x="490" y="928">slower, never a 500 (§6.7).</text>
+  </g>
+  <g>
+    <rect class="node-store" x="860" y="800" width="380" height="118" rx="2"/>
+    <text class="title" x="880" y="830">R2 — originals private, derivatives public</text>
+    <text class="meta" x="880" y="854">AVIF/WebP × 6 widths · depth maps · panorama</text>
+    <text class="meta" x="880" y="871">tiles · HLS ladders · AVIF frame ladders.</text>
+    <text class="meta" x="880" y="894">Content-addressed keys, so they cache for a</text>
+    <text class="meta" x="880" y="911">year at the edge (§11).</text>
+  </g>
+
+  <!-- ── buyer path ─────────────────────────────────────────────── -->
+  <path class="flow" d="M235,186 L235,290"/>
+  <text class="edge" x="245" y="242">1. page request</text>
+
+  <path class="flow" d="M380,340 L470,340"/>
+  <text class="edge" x="386" y="332">2. server-side fetch</text>
+
+  <!-- api → postgres, routed left of the worker so it crosses nothing -->
+  <path class="flow" d="M470,424 L430,424 L430,772 L280,772 L280,800"/>
+  <text class="edge" x="150" y="764">Prisma — the same query a person would write</text>
+
+  <!-- api ↔ redis, routed right of the worker -->
+  <path class="flow" d="M770,424 L812,424 L812,786 L660,786 L660,800"/>
+  <text class="edge" x="824" y="712">reads and busts</text>
+  <text class="edge" x="824" y="728">the 30s cache</text>
+
+  <path class="flow" d="M600,458 L600,562"/>
+  <text class="edge" x="610" y="516">enqueues media jobs</text>
+
+  <!-- ── concierge: result out, prose back ──────────────────────────── -->
+  <path class="flow" d="M470,606 L380,606"/>
+  <text class="edge" x="384" y="598">the result rows</text>
+
+  <path class="flow" d="M380,656 L470,656"/>
+  <text class="edge" x="386" y="676">prose, then verified</text>
+
+  <!-- ── agent path and the 60-second guarantee ─────────────────────── -->
+  <path class="flow" d="M1125,186 L1125,290"/>
+  <text class="edge" x="1135" y="242">signs in, flips status</text>
+
+  <path class="flow-key" d="M1010,374 L770,374"/>
+  <text class="edge-key" x="812" y="364">3. PATCH status</text>
+
+  <path class="flow-key" d="M500,290 L500,266 L300,266 L300,290"/>
+  <text class="edge-key" x="312" y="258">4a. revalidation webhook rebuilds the affected pages</text>
+
+  <path class="flow-key" d="M600,458 L600,482 L350,482 L350,458" marker-end="url(#aa)"/>
+  <text class="edge-key" x="360" y="476">4b. and the client polls /inventory/live every 60s</text>
+
+  <!-- ── worker outputs ─────────────────────────────────────────────── -->
+  <path class="flow-async" d="M770,610 L1010,610"/>
+  <text class="edge-async" x="800" y="602">emails the sales team</text>
+
+  <path class="flow-async" d="M560,708 L560,800"/>
+  <text class="edge-async" x="570" y="756">job state</text>
+
+  <path class="flow-async" d="M770,680 L900,800"/>
+  <text class="edge-async" x="880" y="756">writes every derivative</text>
+
+  <!-- legend -->
+  <g transform="translate(860,290)">
+    <rect class="node" x="0" y="0" width="380" height="0" opacity="0"/>
+  </g>
+  <g transform="translate(90,952)">
+    <line class="flow-key" x1="0" y1="0" x2="34" y2="0"/>
+    <text class="legend" x="44" y="4">availability freshness — two independent paths, §9</text>
+    <line class="flow-async" x1="470" y1="0" x2="504" y2="0"/>
+    <text class="legend" x="514" y="4">asynchronous — a failure here never loses a lead</text>
+    <line class="flow" x1="960" y1="0" x2="994" y2="0"/>
+    <text class="legend" x="1004" y="4">synchronous request</text>
+  </g>
+</svg>

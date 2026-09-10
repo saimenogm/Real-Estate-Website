@@ -14,6 +14,13 @@ rejection list as much as a direction. Choices the spec left open are recorded i
 
 ---
 
+## How it fits together
+
+![System flow](docs/system-flow.png)
+
+Source and export instructions: [`docs/system-flow.html`](docs/system-flow.html),
+[`docs/README-diagram.md`](docs/README-diagram.md).
+
 ## Prerequisites
 
 | Tool | Version | Notes |
