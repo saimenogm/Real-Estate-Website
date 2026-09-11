@@ -44,6 +44,8 @@ export interface MediaAssetDto {
   height: number;
   altText: string | null;
   dominantHex: string | null;
+  /** §7.4 — the Z-depth pass that drives the parallax hero, when one exists. */
+  depthKey?: string | null;
 }
 
 export interface MediaSetDto {

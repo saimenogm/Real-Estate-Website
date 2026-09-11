@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
 import {
   EMPTY_FILTERS,
@@ -14,7 +15,19 @@ import {
 } from '@avida/types';
 import type { InventoryDto, UnitDetailDto } from '../../lib/api';
 import { track } from '../../lib/analytics';
+import { useCapabilities } from '../../lib/capability/useCapabilities';
 import { ElevationStack } from '../inventory/ElevationStack';
+
+/**
+ * §6.6 — everything WebGL is dynamically imported and never blocks first paint.
+ * §8.4 — the model is an alternative view of the same inventory, not a
+ * replacement: the SVG drawing stays the accessible primary (§6.5), which is
+ * also the fallback §8.1 specifies when the device cannot take WebGL.
+ */
+const BuildingSelector = dynamic(
+  () => import('../three/BuildingSelector').then((m) => m.BuildingSelector),
+  { ssr: false, loading: () => <p className="note">Loading the model…</p> },
+);
 import { UnitFilters } from '../inventory/UnitFilters';
 import { UnitPanel } from '../inventory/UnitPanel';
 import { EnquiryForm } from '../EnquiryForm';
@@ -28,6 +41,8 @@ export function Availability({ inventory }: { inventory: InventoryDto }) {
   const [filters, setFilters] = useState<UnitFilterState>(EMPTY_FILTERS);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [enquiryUnit, setEnquiryUnit] = useState<{ id: string; code: string } | null>(null);
+  const [view, setView] = useState<'drawing' | 'model'>('drawing');
+  const caps = useCapabilities();
   const [live, setLive] = useState<Record<string, { status: UnitStatus; priceMinor: number }>>({});
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [pollStopped, setPollStopped] = useState(false);
@@ -130,6 +145,46 @@ export function Availability({ inventory }: { inventory: InventoryDto }) {
           takes the full grid rather than the editorial content column. */}
       <div className="availability-layout full">
         <div className="availability-stack">
+          {/* §8.1 — the toggle only appears where the model can actually run.
+              Offering a view the device will refuse is worse than not offering
+              it: the drawing already answers the same question. */}
+          {caps.probed && caps.heavy3d && (
+            <div className="view-toggle" role="group" aria-label="How to view the building">
+              <button
+                type="button"
+                onClick={() => setView('drawing')}
+                aria-pressed={view === 'drawing'}
+              >
+                Section drawing
+              </button>
+              <button
+                type="button"
+                onClick={() => setView('model')}
+                aria-pressed={view === 'model'}
+              >
+                Three dimensions
+              </button>
+            </div>
+          )}
+
+          {view === 'model' && caps.heavy3d ? (
+            <BuildingSelector
+              units={floors.flatMap((f) =>
+                f.units.map((u) => ({
+                  id: u.id,
+                  code: u.code,
+                  status: u.status,
+                  meshName: null,
+                  positionIndex: u.positionIndex,
+                  widthRatio: u.widthRatio,
+                  floorLevel: f.level,
+                })),
+              )}
+              selectedUnitId={selectedUnitId}
+              onSelect={(id) => setSelectedUnitId((current) => (current === id ? null : id))}
+              autoOrbit={!caps.reducedMotion}
+            />
+          ) : (
           <ElevationStack
             floors={floors}
             currency={inventory.currency}
@@ -137,6 +192,7 @@ export function Availability({ inventory }: { inventory: InventoryDto }) {
             selectedUnitId={selectedUnitId}
             onSelect={(id) => setSelectedUnitId((current) => (current === id ? null : id))}
           />
+          )}
 
           <ul className="legend">
             {UNIT_STATUSES.map((s) => (

@@ -381,3 +381,43 @@ The worker's test count moved between 2 and 4 depending on whether `dist`
 existed: vitest was collecting both the source test and its compiled copy. The
 counts were never wrong about failures, but a test suite that cannot state its
 own size is not trustworthy.
+
+---
+
+## D-33 — The placeholder emits its own depth pass
+
+**Status:** decided, 2026-09-11 · **§7.4, §8 F8**
+
+D-22 says a depth map is never invented, because a guessed one misrepresents
+the building's geometry (§13). That rule is about photographs and CG renders
+whose geometry we do not know.
+
+The placeholder is different: we draw it. `placeholder.ts` now holds the massing
+as data and generates both the picture and a matching depth pass from it, so the
+depth is not inferred from the image — it is the same numbers that produced the
+image. That lets the parallax hero (F8) run and be reviewed before any render
+exists, and it changes nothing about the rule for real assets: a real render
+brings its own Z-depth pass from Blender, or it gets none and the hero renders
+flat (§8.1).
+
+## D-34 — The building model is a view, not a replacement
+
+**Status:** decided, 2026-09-11 · **§8.4, §6.5**
+
+The 3D selector now appears on the availability section behind a two-way toggle,
+sharing selection state with the SVG elevation stack as §8.4 requires.
+
+The drawing stays the default and the accessible primary: every unit in it is
+keyboard-focusable with a full `aria-label`, which a WebGL mesh is not. The
+toggle is only rendered where the capability probe says the model will actually
+run (§8.1) — offering a view the device will refuse is worse than not offering
+it, since the drawing answers the same question.
+
+Orbit is azimuth-only, drag to rotate, with a slow automatic orbit when idle
+that stops under reduced motion. drei's `OrbitControls` would do this too, but
+it is a dependency for one axis, and an unconstrained orbit lets a visitor end
+up underneath the building looking at nothing.
+
+The camera frames itself from the building's extents. A hardcoded distance put
+the lens inside the facade for a 92-unit block — visible immediately in the
+browser, invisible to every test.

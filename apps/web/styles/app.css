@@ -878,3 +878,27 @@ code {
 .sun-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-4); margin: 0; }
 .sun-facts dt { font-size: var(--text-2xs); color: var(--ink-muted); }
 .sun-facts dd { margin: 0; font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
+
+/* §8.4 — switching between the section drawing and the model. */
+.view-toggle {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-block-end: var(--space-5);
+}
+.view-toggle button {
+  appearance: none;
+  border: 0;
+  border-inline-end: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-muted);
+  font: inherit;
+  font-size: var(--text-xs);
+  padding: var(--space-3) var(--space-5);
+  cursor: pointer;
+  transition: background-color 120ms var(--time-ease), color 120ms var(--time-ease);
+}
+.view-toggle button:last-child { border-inline-end: 0; }
+.view-toggle button:hover { color: var(--ink); }
+.view-toggle button[aria-pressed='true'] { background: var(--accent); color: var(--surface); }

@@ -9,6 +9,7 @@ import {
 } from '@avida/types';
 import type { DevelopmentDto, MediaSetDto } from '../../lib/api';
 import { CgiDisclaimer } from '../CgiDisclaimer';
+import { ParallaxHero } from '../ParallaxHero';
 import { TimedImage } from '../TimedImage';
 import { TimeScrubber } from '../TimeScrubber';
 
@@ -23,9 +24,13 @@ export function Hero({ dev, hero }: { dev: DevelopmentDto; hero?: MediaSetDto })
 
   return (
     <header id="hero" className="hero bleed">
-      {/* §6.6 — the hero image is the LCP element, so it loads eagerly at high
-          priority and everything else on the page defers to it. */}
-      {hero && <TimedImage set={hero} priority sizes="100vw" className="hero-image" />}
+      {/*
+        §8 F8 — the depth-parallax hero. ParallaxHero probes the device once
+        (§8.1) and renders a flat TimedImage unless WebGL2, enough memory, a
+        fast connection and no reduced-motion preference all hold, so the image
+        is still the LCP element on everything else (§6.6).
+      */}
+      {hero && <ParallaxHero set={hero} className="hero-image" />}
 
       <div className="hero-copy">
         {/* §2.4 — the development's name is the one italic display moment. */}

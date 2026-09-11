@@ -65,7 +65,7 @@ function Blocks({
     });
   }, [state]);
 
-  const perFloor = Math.max(...units.map((u) => u.positionIndex)) + 1;
+  const perFloor = Math.max(...units.map((u) => u.positionIndex), 0) + 1;
 
   return (
     <group>
@@ -104,16 +104,59 @@ function Blocks({
   );
 }
 
-function SlowOrbit({ enabled }: { enabled: boolean }) {
-  const { camera } = useThree();
-  const angle = useRef(0.6);
+/**
+ * §8.4 — a constrained orbit: azimuth only, no roll, no pan, fixed distance.
+ * drei's OrbitControls would do this, but it is another dependency for one
+ * axis, and an unconstrained orbit lets a visitor end up underneath the
+ * building looking up at nothing.
+ *
+ * Drag rotates; releasing hands back to the slow automatic orbit, which stops
+ * entirely under reduced motion (§2.6).
+ */
+function Orbit({ auto, radius, height, target }: { auto: boolean; radius: number; height: number; target: number }) {
+  const { camera, gl } = useThree();
+  const angle = useRef(0.7);
+  const dragging = useRef(false);
+
+  useEffect(() => {
+    const el = gl.domElement;
+    let lastX = 0;
+
+    const down = (e: PointerEvent) => {
+      dragging.current = true;
+      lastX = e.clientX;
+      el.setPointerCapture(e.pointerId);
+    };
+    const move = (e: PointerEvent) => {
+      if (!dragging.current) return;
+      angle.current -= (e.clientX - lastX) * 0.008;
+      lastX = e.clientX;
+    };
+    const up = (e: PointerEvent) => {
+      dragging.current = false;
+      el.releasePointerCapture?.(e.pointerId);
+    };
+
+    el.addEventListener('pointerdown', down);
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+    return () => {
+      el.removeEventListener('pointerdown', down);
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', up);
+      el.removeEventListener('pointercancel', up);
+    };
+  }, [gl]);
 
   useFrame((_, delta) => {
-    if (!enabled) return;
-    angle.current += delta * 0.08;
-    const radius = 9;
-    camera.position.set(Math.sin(angle.current) * radius, 3.4, Math.cos(angle.current) * radius);
-    camera.lookAt(0, 2, 0);
+    if (auto && !dragging.current) angle.current += delta * 0.06;
+    camera.position.set(
+      Math.sin(angle.current) * radius,
+      height,
+      Math.cos(angle.current) * radius,
+    );
+    camera.lookAt(0, target, 0);
   });
 
   return null;
@@ -130,20 +173,30 @@ export function BuildingSelector({
   onSelect: (id: string) => void;
   autoOrbit?: boolean;
 }) {
+  // Frame the building from its own extents rather than a guessed distance: a
+  // 92-unit block and a 20-unit one need very different cameras, and hardcoding
+  // one put the lens inside the facade.
+  const perFloor = Math.max(...units.map((u) => u.positionIndex), 0) + 1;
+  const topLevel = Math.max(...units.map((u) => u.floorLevel), 1);
+  const width = perFloor * 0.95;
+  const height = topLevel * FLOOR_HEIGHT;
+  const radius = Math.max(width, height) * 1.5;
+
   return (
     <div className="building-selector">
       <Canvas
-        camera={{ position: [6, 3.4, 7], fov: 40 }}
+        camera={{ position: [radius * 0.6, height * 0.9, radius * 0.8], fov: 34 }}
         dpr={[1, 2]}
-        gl={{ antialias: true, powerPreference: 'high-performance' }}
+        // Transparent, so the model sits on whatever surface the time state is
+        // showing rather than punching a white hole in the page.
+        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       >
-        <color attach="background" args={['#00000000']} />
-        <ambientLight intensity={0.75} />
-        <directionalLight position={[6, 10, 6]} intensity={1.1} />
+        <ambientLight intensity={0.7} />
+        <directionalLight position={[width, height * 3, width]} intensity={1.15} />
         <Suspense fallback={null}>
           <Blocks units={units} selectedUnitId={selectedUnitId} onSelect={onSelect} />
         </Suspense>
-        <SlowOrbit enabled={autoOrbit} />
+        <Orbit auto={autoOrbit} radius={radius} height={height * 0.85} target={height * 0.45} />
       </Canvas>
       <p className="note">
         Massing model. TODO(content) — replaced by the architect&rsquo;s decimated glTF when it

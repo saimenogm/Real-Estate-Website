@@ -19,6 +19,9 @@ import type { Orientation, UnitStatus } from '@avida/types';
 
 function mediaSet(key: string, label: string, kind: string): MediaSetDto {
   const states = ['DAWN', 'DAY', 'DUSK', 'NIGHT'] as const;
+  // §8.1 — only the exterior and aerial sets drive the parallax hero.
+  const depthKey =
+    kind === 'EXTERIOR' || kind === 'AERIAL' ? `seed-media/${key}-depth.svg` : null;
   return {
     id: `set-${key}`,
     key,
@@ -33,6 +36,7 @@ function mediaSet(key: string, label: string, kind: string): MediaSetDto {
           originalKey: `seed-media/${key}-${t.toLowerCase()}.svg`,
           width: 1600,
           height: 900,
+          depthKey,
           altText: `${label}, ${t.toLowerCase()}`,
           dominantHex: { DAWN: '#DCD8D2', DAY: '#E4E3DD', DUSK: '#2E3038', NIGHT: '#171B26' }[t],
         },

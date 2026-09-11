@@ -17,7 +17,7 @@ import {
   type TimeState,
   type UnitStatus,
 } from '../generated/client/client.js';
-import { placeholderSvg } from './placeholder.js';
+import { placeholderDepthSvg, placeholderSvg } from './placeholder.js';
 import { prisma } from '../src/index.js';
 import {
   amenities,
@@ -70,6 +70,19 @@ function writePlaceholder(setKey: string, label: string, state: TimeState): stri
     placeholderSvg(setKey, label, state),
     'utf8',
   );
+  return key;
+}
+
+/**
+ * §7.4 / §8 F8 — the depth pass that lets the parallax hero run before any real
+ * render exists. One per set, not per time state: the geometry does not change
+ * with the light. Emitted from the same massing data as the picture, never
+ * inferred from it (see placeholder.ts).
+ */
+function writeDepthPlaceholder(setKey: string): string {
+  const key = `seed-media/${setKey}-depth.svg`;
+  mkdirSync(PLACEHOLDER_DIR, { recursive: true });
+  writeFileSync(resolve(PLACEHOLDER_DIR, `${setKey}-depth.svg`), placeholderDepthSvg(setKey), 'utf8');
   return key;
 }
 
@@ -311,6 +324,11 @@ async function main() {
     // §4.6 asks for four sets × four states = sixteen placeholder assets, so
     // every set gets all four here. requiredStates() below stays the minimum
     // the real renders must meet (§4.3), which is a lower bar for interiors.
+    // §8.1 — only the exterior and aerial sets drive the parallax hero, so only
+    // they get a depth pass.
+    const depthKey =
+      set.kind === 'EXTERIOR' || set.kind === 'AERIAL' ? writeDepthPlaceholder(set.key) : null;
+
     for (const state of TIME_STATES) {
       const key = writePlaceholder(set.key, set.label, state);
       await prisma.mediaAsset.upsert({
@@ -327,9 +345,10 @@ async function main() {
           variants: { placeholder: true, svg: key } as Prisma.InputJsonValue,
           thumbhash: '',
           dominantHex: PLACEHOLDER_DOMINANT[state],
+          depthKey,
           altText: `${set.label}, ${state.toLowerCase()}. Placeholder image.`,
         },
-        update: { originalKey: key, dominantHex: PLACEHOLDER_DOMINANT[state] },
+        update: { originalKey: key, dominantHex: PLACEHOLDER_DOMINANT[state], depthKey },
       });
     }
   }

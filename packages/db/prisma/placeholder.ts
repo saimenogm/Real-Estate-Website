@@ -41,39 +41,98 @@ function hash(input: string): number {
   return Math.abs(h);
 }
 
+/**
+ * The massing the placeholder draws, as plain data, so the beauty image and its
+ * depth pass are generated from one source and cannot disagree.
+ */
+interface Block {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  /** 0 = far, 1 = near. Nearer blocks are drawn later and lower. */
+  depth: number;
+}
+
+function massing(setKey: string): Block[] {
+  const seed = hash(setKey);
+  const blocks: Block[] = [];
+  const count = 4 + (seed % 3);
+  let x = 120 + (seed % 90);
+
+  for (let i = 0; i < count; i++) {
+    const w = 190 + ((seed >> (i * 3)) % 160);
+    const h = 230 + ((seed >> (i * 2)) % 300);
+    blocks.push({ x, y: 720 - h, w, h, depth: (i + 1) / (count + 1) });
+    x += w + 26;
+    if (x > 1400) break;
+  }
+  return blocks;
+}
+
+/**
+ * §7.4 — a depth pass for the parallax hero.
+ *
+ * This is emitted, not inferred. DECISIONS D-22 forbids synthesising a depth
+ * map for a real render, because a guessed one misrepresents the building's
+ * geometry (§13). That rule is about photographs and CG renders whose geometry
+ * we do not know. Here we drew the image ourselves ten lines ago, so the depth
+ * is not a guess: it is the same numbers that produced the picture.
+ *
+ * When a real render arrives it brings its own Z-depth pass, or it gets none.
+ */
+export function placeholderDepthSvg(setKey: string): string {
+  const blocks = massing(setKey);
+  const rects = blocks
+    .map((b) => {
+      const v = Math.round(40 + b.depth * 150);
+      return `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="rgb(${v},${v},${v})"/>`;
+    })
+    .join('\n  ');
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <linearGradient id="far" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#000000"/>
+      <stop offset="100%" stop-color="#1A1A1A"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#far)"/>
+  ${rects}
+  <rect x="0" y="720" width="1600" height="180" fill="#F2F2F2"/>
+</svg>`;
+}
+
 export function placeholderSvg(setKey: string, label: string, state: TimeStateKey): string {
   const p = PALETTES[state];
   const seed = hash(setKey);
 
-  // A skyline of four to six blocks, stepped like the building the spec
-  // describes rather than a random city.
-  const blocks: string[] = [];
-  const count = 4 + (seed % 3);
-  let x = 120 + (seed % 90);
-  for (let i = 0; i < count; i++) {
-    const w = 190 + ((seed >> (i * 3)) % 160);
-    const h = 230 + ((seed >> (i * 2)) % 300);
-    const y = 720 - h;
-    blocks.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${p.massing}"/>`);
+  // Four to six blocks, stepped like the building the spec describes rather
+  // than a random city. Shared with the depth pass so the two agree exactly.
+  const parts: string[] = [];
+  for (const b of massing(setKey)) {
+    // Nearer blocks sit slightly darker, which is what reads as depth.
+    parts.push(
+      `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="${p.massing}" opacity="${(0.72 + b.depth * 0.28).toFixed(2)}"/>`,
+    );
 
-    // Window grid — the only reason the four states read differently at a glance.
-    const rows = Math.floor(h / 46);
-    const cols = Math.floor(w / 44);
+    // Window grid — the main reason the four states read differently at a glance.
+    const rows = Math.floor(b.h / 46);
+    const cols = Math.floor(b.w / 44);
     for (let r = 1; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         const lit = (seed >> ((r * cols + c) % 28)) & 1;
         if (state === 'DAY' || state === 'DAWN' || lit) {
-          blocks.push(
-            `<rect x="${x + 14 + c * 44}" y="${y + 12 + r * 46}" width="20" height="26" fill="${p.window}" opacity="${
+          parts.push(
+            `<rect x="${b.x + 14 + c * 44}" y="${b.y + 12 + r * 46}" width="20" height="26" fill="${p.window}" opacity="${
               state === 'DAY' ? p.windowOpacity : lit ? p.windowOpacity : 0.12
             }"/>`,
           );
         }
       }
     }
-    x += w + 26;
-    if (x > 1400) break;
   }
+  const blocks = parts;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-label="Placeholder for ${label}, ${state.toLowerCase()}">
   <defs>
