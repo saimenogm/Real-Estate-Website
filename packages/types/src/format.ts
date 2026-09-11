@@ -80,6 +80,22 @@ export function formatArea(sqm: number, locale: string = DEFAULT_LOCALE): string
   return `${n} m²`;
 }
 
+/**
+ * A compact area range for spec tables: `41 – 46 m²`, with the unit stated
+ * once. Two full `formatArea` calls ("41.0 m² to 46.0 m²") wrap onto a second
+ * line in a four-column row, which reads as an afterthought.
+ */
+export function formatAreaRange(
+  minSqm: number,
+  maxSqm: number,
+  locale: string = DEFAULT_LOCALE,
+): string {
+  if (Math.round(minSqm) === Math.round(maxSqm)) return formatArea(minSqm, locale);
+  const fmt = (n: number) =>
+    new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(n);
+  return `${fmt(minSqm)} – ${fmt(maxSqm)} m²`;
+}
+
 /** §3.5 — under 1km in whole metres, above in km to one decimal. */
 export function formatDistance(metres: number, locale: string = DEFAULT_LOCALE): string {
   if (metres < 1000) {

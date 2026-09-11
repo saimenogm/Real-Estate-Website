@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   formatArea,
+  formatAreaRange,
   formatCount,
   formatDate,
   formatDistance,
@@ -45,6 +46,15 @@ describe('formatArea', () => {
   it('renders one decimal and the unit', () => {
     expect(formatArea(142)).toBe('142.0 m²');
     expect(formatArea(142.44)).toBe('142.4 m²');
+  });
+});
+
+describe('formatAreaRange', () => {
+  it('states the unit once and keeps the range on one line', () => {
+    expect(formatAreaRange(41, 46)).toBe('41 – 46 m²');
+  });
+  it('collapses when the range is a single size', () => {
+    expect(formatAreaRange(142, 142.4)).toBe('142.0 m²');
   });
 });
 

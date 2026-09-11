@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import {
-  formatArea,
+  formatAreaRange,
   formatCount,
   formatDistance,
   formatMoney,
@@ -19,21 +19,55 @@ import { TimeScrubber } from '../TimeScrubber';
  */
 
 export function Hero({ dev, hero }: { dev: DevelopmentDto; hero?: MediaSetDto }) {
+  const { summary } = dev;
+
   return (
-    <header id="hero" className="hero">
-      {hero && <TimedImage set={hero} priority className="hero-image" />}
+    <header id="hero" className="hero bleed">
+      {/* §6.6 — the hero image is the LCP element, so it loads eagerly at high
+          priority and everything else on the page defers to it. */}
+      {hero && <TimedImage set={hero} priority sizes="100vw" className="hero-image" />}
+
       <div className="hero-copy">
         {/* §2.4 — the development's name is the one italic display moment. */}
         <h1 className="display display-italic">{dev.name}</h1>
         {dev.tagline && <p className="lead">{dev.tagline}</p>}
-        {/* §2.1 — no middle-dot meta strings. Two facts, two sentences. */}
-        <p className="meta">
-          {dev.city}. {formatCount(dev.summary.available)} of {dev.summary.total} units available.
-          {dev.handoverDate && ` Handover ${formatQuarter(dev.handoverDate)}.`}
-        </p>
-        <TimeScrubber />
+
+        {/*
+          The three questions a buyer actually arrives with (§1.2), answered
+          above the fold as numbers rather than adjectives (§2.7). Written as a
+          definition list, not a meta string joined with middle dots (§2.1).
+        */}
+        <dl className="hero-facts">
+          <div>
+            <dt>Available</dt>
+            <dd>
+              {formatCount(summary.available)} of {summary.total}
+            </dd>
+          </div>
+          {summary.priceMinorMin !== null && (
+            <div>
+              <dt>From</dt>
+              <dd>{formatMoney({ amountMinor: summary.priceMinorMin, currency: dev.currency })}</dd>
+            </div>
+          )}
+          {dev.handoverDate && (
+            <div>
+              <dt>Handover</dt>
+              <dd>{formatQuarter(dev.handoverDate)}</dd>
+            </div>
+          )}
+          <div>
+            <dt>Where</dt>
+            <dd>{dev.city}</dd>
+          </div>
+        </dl>
+
+        <div className="hero-scrubber">
+          <TimeScrubber />
+        </div>
+
+        <CgiDisclaimer className="disclaimer" />
       </div>
-      <CgiDisclaimer className="disclaimer" />
     </header>
   );
 }
@@ -100,9 +134,7 @@ export function Residences({ dev, mode }: { dev: DevelopmentDto; mode: 'single' 
               </div>
               <div>
                 <dt>Area</dt>
-                <dd data-numeric>
-                  {formatArea(t.areaSqmMin)} to {formatArea(t.areaSqmMax)}
-                </dd>
+                <dd data-numeric>{formatAreaRange(t.areaSqmMin, t.areaSqmMax)}</dd>
               </div>
               <div>
                 <dt>Available</dt>

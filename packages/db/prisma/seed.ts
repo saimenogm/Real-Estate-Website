@@ -17,6 +17,7 @@ import {
   type TimeState,
   type UnitStatus,
 } from '../generated/client/client.js';
+import { placeholderSvg } from './placeholder.js';
 import { prisma } from '../src/index.js';
 import {
   amenities,
@@ -44,36 +45,31 @@ const PLACEHOLDER_DIR = resolve(process.cwd(), '../../apps/web/public/seed-media
 
 const TIME_STATES: TimeState[] = ['DAWN', 'DAY', 'DUSK', 'NIGHT'];
 
-/** §2.3 surface colours, so a placeholder still shows the time system working. */
-const PLACEHOLDER_COLOURS: Record<TimeState, { bg: string; ink: string }> = {
-  DAWN: { bg: '#DCD8D2', ink: '#2B2A2C' },
-  DAY: { bg: '#E4E3DD', ink: '#232B24' },
-  DUSK: { bg: '#2E3038', ink: '#E9E5DC' },
-  NIGHT: { bg: '#171B26', ink: '#DFDCD4' },
+/**
+ * The colour a TimedImage shows before any pixel arrives (§6.6 — it holds the
+ * space so the layout never shifts). Mid-tone of each placeholder's sky.
+ */
+const PLACEHOLDER_DOMINANT: Record<TimeState, string> = {
+  DAWN: '#CFCEC E'.replace(' ', ''),
+  DAY: '#CBD2CF',
+  DUSK: '#6A6350',
+  NIGHT: '#1A2030',
 };
 
 /**
- * §4.6 — "solid-colour generated PNGs with the label baked in, so missing art
- * is obvious". SVG rather than PNG: no image dependency in the db package, and
- * it is unmistakably not a render.
+ * §4.6 asks for generated placeholders with the label baked in. The drawing
+ * itself lives in placeholder.ts, which explains why it looks the way it does.
+ * SVG rather than PNG: no image dependency in this package, smaller, and
+ * unmistakably not a render.
  */
 function writePlaceholder(setKey: string, label: string, state: TimeState): string {
-  const { bg, ink } = PLACEHOLDER_COLOURS[state];
   const key = `seed-media/${setKey}-${state.toLowerCase()}.svg`;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-label="Placeholder for ${label}, ${state.toLowerCase()}">
-  <rect width="1600" height="900" fill="${bg}"/>
-  <g fill="none" stroke="${ink}" stroke-opacity="0.28" stroke-width="2">
-    <path d="M0 450h1600M800 0v900"/>
-    <rect x="60" y="60" width="1480" height="780"/>
-  </g>
-  <g fill="${ink}" font-family="ui-sans-serif, system-ui, sans-serif">
-    <text x="100" y="420" font-size="64">${label}</text>
-    <text x="100" y="500" font-size="40" fill-opacity="0.7">${state.toLowerCase()}</text>
-    <text x="100" y="800" font-size="26" fill-opacity="0.6">Placeholder — no render supplied yet. TODO(content)</text>
-  </g>
-</svg>`;
   mkdirSync(PLACEHOLDER_DIR, { recursive: true });
-  writeFileSync(resolve(PLACEHOLDER_DIR, `${setKey}-${state.toLowerCase()}.svg`), svg, 'utf8');
+  writeFileSync(
+    resolve(PLACEHOLDER_DIR, `${setKey}-${state.toLowerCase()}.svg`),
+    placeholderSvg(setKey, label, state),
+    'utf8',
+  );
   return key;
 }
 
@@ -330,10 +326,10 @@ async function main() {
           height: 900,
           variants: { placeholder: true, svg: key } as Prisma.InputJsonValue,
           thumbhash: '',
-          dominantHex: PLACEHOLDER_COLOURS[state].bg,
+          dominantHex: PLACEHOLDER_DOMINANT[state],
           altText: `${set.label}, ${state.toLowerCase()}. Placeholder image.`,
         },
-        update: { originalKey: key, dominantHex: PLACEHOLDER_COLOURS[state].bg },
+        update: { originalKey: key, dominantHex: PLACEHOLDER_DOMINANT[state] },
       });
     }
   }

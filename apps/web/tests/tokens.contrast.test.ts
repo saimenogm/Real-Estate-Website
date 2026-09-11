@@ -7,7 +7,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { contrastRatio, parseTokenStates } from './contrast';
+import { contrastRatio, luminance, parseTokenStates } from './contrast';
 
 const css = readFileSync(resolve(__dirname, '../styles/tokens.css'), 'utf8');
 const states = parseTokenStates(css);
@@ -42,6 +42,34 @@ describe('§6.5 contrast floor — 4.5:1 for body text', () => {
   it.each(STATES)('%s: muted ink on surface', (state) => {
     const t = states[state]!;
     expect(contrastRatio(t['--ink-muted']!, t['--surface']!)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+// Regression: the hero once used --surface for type over the scrim. That reads
+// as white-on-dark by day and dark-on-dark at night, because --surface inverts
+// between states while the scrim is always built from --ink. --on-scrim exists
+// so the type has a ground-independent colour, and these assertions are what
+// stop a future edit from quietly reintroducing the inversion.
+describe('§6.5 contrast floor — type over the hero scrim', () => {
+  it.each(STATES)('%s: on-scrim text against the scrim ground', (state) => {
+    const t = states[state]!;
+    // --scrim-ground, not --ink: --ink is light in the dark states, so a scrim
+    // built from it would wash the image pale at night and put light type on a
+    // light ground. The gradient bottoms out at 88% of this value.
+    expect(contrastRatio(t['--on-scrim']!, t['--scrim-ground']!)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.each(STATES)('%s: muted on-scrim text stays readable', (state) => {
+    const t = states[state]!;
+    expect(contrastRatio(t['--on-scrim-muted']!, t['--scrim-ground']!)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.each(STATES)('%s: the scrim ground is dark and its type is light', (state) => {
+    const t = states[state]!;
+    expect(luminance(t['--scrim-ground']!)).toBeLessThan(0.05);
+    // A light value has a high luminance; if a future edit set this to
+    // --surface the dark states would fail here before anyone saw the page.
+    expect(luminance(t['--on-scrim']!)).toBeGreaterThan(0.5);
   });
 });
 

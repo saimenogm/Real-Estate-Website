@@ -314,3 +314,70 @@ to be audited but does not say who may run it. SALES reads the enquiry inbox in
 the app and works individual leads; walking out with every lead's contact
 details in one file is limited to the two roles accountable for the data. Both
 paths write an `AdminAuditLog` row with the actor, the filter and the row count.
+
+---
+
+## D-28 — A fixture-backed preview route
+
+**Status:** decided, 2026-09-11
+
+`/preview` renders every section from `lib/fixtures/development.ts` with no API
+and no database, and 404s outside development. It exists because the interface
+could not otherwise be judged: the web app fetches at build and at request time,
+so with Postgres down there was no way to see a page at all, let alone compare
+four time states.
+
+Fixture shapes mirror the DTOs exactly, so a component that looks right in the
+harness looks right in production. It is also the fastest way to catch a visual
+regression across every section at once.
+
+## D-29 — `--on-scrim` and `--scrim-ground`
+
+**Status:** decided, 2026-09-11 · **§2.3, §6.5**
+
+The hero puts display type over a photograph. The first implementation used
+`--surface` for that type and built the scrim from `--ink` — which reads
+correctly by day and inverts completely at night, because both tokens swap roles
+between the light and dark states. The result was dark type on a dark image.
+
+Two tokens fix it, and neither inverts:
+
+- `--scrim-ground` — always dark, the gradient beneath the hero copy.
+- `--on-scrim` / `--on-scrim-muted` — always light, the type on top of it.
+
+`tokens.contrast.test.ts` now asserts both: the ground is dark in every state,
+the type clears 4.5:1 against it in every state. The bug was invisible to the
+previous tests because they only checked ink-on-surface pairs, which were fine.
+
+**The general rule:** a token whose meaning depends on the time state cannot be
+used for content whose ground does not change with it.
+
+## D-30 — Global `box-sizing: border-box`
+
+**Status:** decided, 2026-09-11
+
+Absent, which meant `min-block-size: 46px` plus padding produced 72px controls.
+Every form field on the site was half as tall again as specified.
+
+## D-31 — Placeholder art is tonal, not a labelled rectangle
+
+**Status:** decided, 2026-09-11 · **§4.6**
+
+The seed placeholders were near-white rectangles with the set name at 64px
+across the middle. That satisfies "make missing art obvious" and defeats the
+other job a placeholder has: standing in for a photograph well enough to judge
+the layout over it. Display type over the hero looked broken when it was not.
+
+`packages/db/prisma/placeholder.ts` now draws a tonal sky, a flat massing
+silhouette and a window grid that differs per time state, with the label small
+in the corner. Still unmistakably not a render — and the four states now read as
+four times of day, which is the thing being demonstrated.
+
+## D-32 — Vitest collects from `src` only
+
+**Status:** decided, 2026-09-11
+
+The worker's test count moved between 2 and 4 depending on whether `dist`
+existed: vitest was collecting both the source test and its compiled copy. The
+counts were never wrong about failures, but a test suite that cannot state its
+own size is not trustworthy.

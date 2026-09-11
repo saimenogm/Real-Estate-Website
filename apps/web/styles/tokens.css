@@ -20,6 +20,9 @@
   --foliage:        #3F5B43;
   --scrim:          rgba(35, 43, 36, 0.32);
   --elev:           0 2px 24px rgba(35, 43, 36, 0.10);
+  --on-scrim:       #F4F2EC;  /* type over the hero scrim — always light */
+  --on-scrim-muted: #CFCCC2;
+  --scrim-ground:   #151812;  /* the hero scrim, always dark — --ink inverts, this does not */
 }
 
 /* ---- DAWN ---- */
@@ -35,6 +38,9 @@
   --foliage:        #4A5C4B;
   --scrim:          rgba(43, 42, 44, 0.30);
   --elev:           0 2px 24px rgba(43, 42, 44, 0.10);
+  --on-scrim:       #F4F1EB;  /* type over the hero scrim — always light */
+  --on-scrim-muted: #CCC8C0;
+  --scrim-ground:   #17161A;  /* the hero scrim, always dark — --ink inverts, this does not */
 }
 
 /* ---- DUSK ---- */
@@ -50,6 +56,9 @@
   --foliage:        #46584A;
   --scrim:          rgba(20, 21, 26, 0.48);
   --elev:           0 2px 32px rgba(10, 11, 14, 0.42);
+  --on-scrim:       #F2EFE7;  /* type over the hero scrim — always light */
+  --on-scrim-muted: #C9C5BC;
+  --scrim-ground:   #101218;  /* the hero scrim, always dark — --ink inverts, this does not */
 }
 
 /* ---- NIGHT ---- */
@@ -65,6 +74,9 @@
   --foliage:        #2F4438;
   --scrim:          rgba(8, 10, 16, 0.56);
   --elev:           0 2px 40px rgba(0, 0, 0, 0.55);
+  --on-scrim:       #EFECE4;  /* type over the hero scrim — always light */
+  --on-scrim-muted: #C4C1B8;
+  --scrim-ground:   #0A0C12;  /* the hero scrim, always dark — --ink inverts, this does not */
 }
 
 /* §2.4 — major third, 1.250, 17px base. */
@@ -96,6 +108,14 @@
   --time-colour-ms: 900ms;
   --time-image-ms: 1200ms;
   --time-ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*,
+*::before,
+*::after {
+  /* Without this, a min-height plus padding on an input adds up rather than
+     containing itself, and every control renders taller than it is specified. */
+  box-sizing: border-box;
 }
 
 html {

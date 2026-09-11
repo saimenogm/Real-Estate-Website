@@ -126,7 +126,9 @@ export function Availability({ inventory }: { inventory: InventoryDto }) {
         .
       </p>
 
-      <div className="availability-layout">
+      {/* The elevation stack is the page's signature device (§2.5), so it
+          takes the full grid rather than the editorial content column. */}
+      <div className="availability-layout full">
         <div className="availability-stack">
           <ElevationStack
             floors={floors}
